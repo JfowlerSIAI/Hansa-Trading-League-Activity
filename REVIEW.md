@@ -1,8 +1,12 @@
-# Hansa review: targeted fixes and teaching polish
+# Hansa review: learning workspace proposal
 
 Reviewed against initial commit `1d0d5677070fe200bc9b84626fc87e3c0667fd36`.
 This is a proposed contribution for the maintainer's review, not a teaching-release
 certification or a change to the project's licensing and attribution.
+
+The larger branch includes the targeted fixes plus the extensions documented in
+[WORKSPACE_PROPOSAL.md](WORKSPACE_PROPOSAL.md), with screenshots and the current
+validation results. The findings below describe the original prototype.
 
 ## Assessment
 
@@ -59,7 +63,7 @@ essential. No optimization or alternative welfare rule is introduced.
 
 - Existing model suite: **345,992 assertions**, including an independent accounting
   oracle and 3,000 generated feasible plans; passed.
-- Browser suite covers unique control names, exercise focus, the worked exchange,
+- Browser suite: **96 checks passed** across file and HTTP loading. It covers unique control names, exercise focus, the worked exchange,
   six-turn completion, refused proposals, completed membership language, invalid
   input recovery, candidate removal, preview invalidation, and all four self-checks.
 - Browser runs on both `file://` and local HTTP, with overflow checks at 1280, 640,

@@ -29,7 +29,9 @@ everything is local. Model tests run with Node: `node tests/model-tests.cjs`.
 
 ### Proposed review improvements
 
-See [REVIEW.md](REVIEW.md) for findings, scope, and validation. The optional
+See [REVIEW.md](REVIEW.md) for findings and
+[WORKSPACE_PROPOSAL.md](WORKSPACE_PROPOSAL.md) for the larger proposed learning
+workspace, screenshots, controlled comparisons, and CSV ledger. The optional
 browser regression suite requires Node 20 or later: `npm ci`, then
 `npx playwright install chromium`, then `npm test`. `npm run test:model` needs
 no browser. `HANSA_CHROMIUM_PATH` can select an existing Chromium executable.

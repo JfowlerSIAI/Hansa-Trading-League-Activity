@@ -2,7 +2,7 @@
   "name": "hansa-trading-league-activity",
   "private": true,
   "scripts": {
-    "test": "node tests/model-tests.cjs && node tests/ui-tests.cjs",
+    "test": "node tests/model-tests.cjs && node tests/learning-tests.cjs && node tests/ui-tests.cjs",
     "test:model": "node tests/model-tests.cjs",
     "test:browser": "node tests/ui-tests.cjs"
   },

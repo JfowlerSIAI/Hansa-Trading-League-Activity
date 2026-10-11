@@ -20,7 +20,7 @@
   }
   function invalidate() {
     preview = null; el('execute').disabled = true; el('preview-hint').textContent = state.turn === 6 ? 'Session complete.' : 'Preview your current plan before executing.';
-    V.results(null); clearErrors(); clearChecks(); status('');
+    V.results(null); V.comparisons(null); clearErrors(); clearChecks(); status('');
   }
   function render(focus) {
     V.summary(state); V.world(state, draft); V.planner(state, draft); V.history(state);
@@ -46,7 +46,14 @@
   el('example').addEventListener('click', function () { load(M.fixture('trade'), 'Worked example loaded in a new session. Preview to compare both cities with autarky.', 'plan-heading'); });
   el('production-controls').addEventListener('input', function (event) {
     var id = event.target.id;
-    if (id.indexOf('share-') === 0) { draft.shares[M.ids.indexOf(id.slice(6))] = event.target.value; invalidate(); }
+    if (id.indexOf('share-') === 0) { draft.shares[M.ids.indexOf(id.slice(6))] = event.target.value; invalidate(); V.budgets(state, draft); }
+  });
+  el('production-controls').addEventListener('click', function (event) {
+    var button = event.target.closest('button[data-share]');
+    if (!button || button.disabled || state.turn === 6) return;
+    var id = button.dataset.city, value = Number(button.dataset.share);
+    draft.shares[M.ids.indexOf(id)] = value; el('share-' + id).value = value; invalidate(); V.budgets(state, draft);
+    status(M.name(id) + ' grain share set to ' + value + ' percent. Preview the revised plan.');
   });
   el('production-controls').addEventListener('change', function (event) {
     var id = event.target.id;
@@ -59,7 +66,7 @@
   function shipmentEdit(event) {
     var match = /^shipment-(\d+)-(from|to|good|amount)$/.exec(event.target.id);
     if (!match || !draft.shipments[Number(match[1])]) return;
-    draft.shipments[Number(match[1])][match[2]] = event.target.value; invalidate();
+    draft.shipments[Number(match[1])][match[2]] = event.target.value; invalidate(); V.budgets(state, draft);
   }
   el('shipments-controls').addEventListener('input', shipmentEdit);
   el('shipments-controls').addEventListener('change', shipmentEdit);
@@ -84,6 +91,20 @@
     status('Turn ' + state.turn + ' completed. Gain: ' + V.fmt(result.result.score) + ' utility units. ' + (result.result.departed.length ? V.list(result.result.departed) + ' left; production reset to autarky and shipments cleared. ' : state.turn < 6 ? 'The plan is retained for the next turn. ' : '') + (state.turn === 6 ? 'Session complete.' : 'Fresh labor is available; no goods were stored.'));
     el(state.turn === 6 ? 'restart' : 'preview').focus();
   });
+  el('compare-economies').addEventListener('click', function () {
+    if (state.turn === 6) return;
+    V.comparisons(window.HansaLearning.compare(state, draft));
+    el('comparison-heading').focus(); status('Same-plan comparison ready. The current economy, plan, score, and turn have not changed.');
+  });
+  el('download-record').addEventListener('click', function () {
+    if (!state.history.length) return;
+    var url = URL.createObjectURL(new Blob([window.HansaLearning.csv(state)], { type: 'text/csv;charset=utf-8' }));
+    var link = document.createElement('a'); link.href = url; link.download = 'hansa-' + state.scenario + '-turn-' + state.turn + '.csv';
+    document.body.appendChild(link); link.click(); link.remove();
+    window.setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    status('League record downloaded as CSV. Values use full calculation precision.');
+  });
+  V.comparisons(null);
   V.prompts();
   Object.keys(M.prompts).forEach(function (id) {
     el('load-' + id).addEventListener('click', function () { load(M.fixture(id), 'Exercise loaded in a new session. Preview its plan before checking your answer.', 'plan-heading'); });

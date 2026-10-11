@@ -42,6 +42,35 @@ const server = http.createServer((req, res) => {
       eq(await page.locator('#preview').isDisabled(), true, 'Seventh turn cannot be previewed');
       eq(await page.locator('#execute').isDisabled(), true, 'Seventh turn cannot execute');
       eq(await page.locator('#history-table tbody tr').count(), 6, 'All six outcomes recorded');
+      if (await page.locator('#compare-economies').count()) {
+        eq(await page.locator('#compare-economies').isDisabled(), true, 'Comparisons do not reopen a completed session');
+        const downloaded = page.waitForEvent('download');
+        await page.locator('#download-record').click();
+        const csv = fs.readFileSync(await (await downloaded).path(), 'utf8');
+        eq(csv.trim().split('\r\n').length, 25, 'CSV download contains every city in every completed turn');
+        await page.locator('#load-transport').click();
+        const before = await page.locator('#score-label').textContent();
+        await page.locator('#compare-economies').click();
+        eq(await page.locator('#execute').isDisabled(), true, 'Comparison does not substitute for explicit preview');
+        eq(await page.locator('#comparison-panel .comparison-card').count(), 3, 'All three counterfactual economies shown');
+        ok((await page.locator('#comparison-panel .comparison-card').nth(0).textContent()).includes('Executable'), 'Cheap control exchange is executable');
+        ok((await page.locator('#comparison-panel .comparison-card').nth(1).textContent()).includes('Invitation refused'), 'Costly control exchange is refused');
+        eq(await page.locator('#score-label').textContent(), before, 'Comparison awards no points');
+        eq(await page.locator('#scenario').inputValue(), 'expensive', 'Comparison does not change the current economy');
+        eq(await page.locator('#shipment-0-amount').inputValue(), '10', 'Comparison preserves shipment instructions');
+        await page.locator('#share-alder').fill('55');
+        eq(await page.locator('#comparison-panel .comparison-card').count(), 0, 'Edits invalidate old comparisons');
+        await page.locator('#example').click();
+        ok((await page.locator('#budget-alder').textContent()).includes('Produces 95 grain'), 'Live budget accounts for transport before production');
+        await page.locator('#preview').click();
+        await page.locator('#compare-economies').click();
+        eq(await page.locator('#execute').isDisabled(), false, 'Comparison does not invalidate an unchanged explicit preview');
+        eq(await page.locator('#comparison-panel .comparison-state').nth(1).textContent(), 'Physically infeasible', 'Impossible export is distinct from voluntary refusal');
+        await page.locator('[data-city="alder"][data-share="50"]').click();
+        eq(await page.locator('#share-alder').inputValue(), '50', 'Production preset updates the numeric control');
+        eq(await page.locator('#execute').isDisabled(), true, 'Preset invalidates permission to execute');
+        eq(await page.locator('#draft-health').isVisible(), true, 'Invalid budget remains visible through field error clearing');
+      }
       await page.locator('#load-transport').click(); await page.locator('#preview').click();
       eq(await page.locator('#execute').isDisabled(), true, 'Refusal blocks execution');
       ok((await page.locator('#preview-summary').textContent()).includes('No membership changes have occurred'), 'Blocked departure stays conditional');
@@ -57,6 +86,11 @@ const server = http.createServer((req, res) => {
       for (const width of [1280, 640, 375, 320]) {
         await page.setViewportSize({ width, height: 900 });
         ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), `No page overflow at ${width}px`);
+      }
+      if (await page.locator('#compare-economies').count()) {
+        await page.locator('#compare-economies').click();
+        ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'Comparison reflows at 320px');
+        ok(await page.locator('#shipments-controls').evaluate(e => e.scrollWidth <= e.clientWidth + 1), 'Manifest needs no horizontal scrolling at 320px');
       }
       await page.locator('#candidate-birch').uncheck();
       eq(await page.locator('[id^="shipment-"][id$="-amount"]').count(), 0, 'Uninviting removes connected shipments');
